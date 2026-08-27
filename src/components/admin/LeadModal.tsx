@@ -4,21 +4,20 @@ import { useState, useTransition, useEffect } from 'react';
 import { 
   X, Calendar, Clock, MapPin, Users, Cake, FileText, 
   CheckCircle, XCircle, Loader2, CheckCheck, RefreshCcw, ArrowLeft,
-  Pencil, Save
+  Pencil, Save, MessageCircle // Added MessageCircle for WhatsApp
 } from 'lucide-react';
 import { Lead, LeadStatus } from '@/types';
-import { updateLeadStatus, updateLeadDetails } from '@/actions/leads'; // Adjust path if needed
+import { updateLeadStatus, updateLeadDetails } from '@/actions/leads'; 
+import { getWhatsAppLink } from '@/utils/whatsapp';
 
 interface LeadModalProps {
   lead: Lead | null;
   isOpen: boolean;
   onClose: () => void;
-  // Optional callbacks to update the parent component (LeadCard) in real-time
   onLeadUpdate?: (updatedLead: Lead) => void;
   onStatusChange?: (newStatus: LeadStatus) => void;
 }
 
-// Map statuses to their Hebrew display names
 const STATUS_LABELS: Record<LeadStatus, string> = {
   pending: 'ממתין לאישור',
   approved: 'מאושר',
@@ -37,30 +36,25 @@ export default function LeadModal({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   
-  // Status change state
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus | ''>('');
   
-  // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<Lead>>({});
 
-  // Reset modal state every time it opens with a new lead
   useEffect(() => {
     if (isOpen && lead) {
       setSelectedStatus('');
       setError(null);
       setIsEditing(false);
-      setFormData(lead); // Populate initial data for editing
+      setFormData(lead); 
     }
   }, [isOpen, lead]);
 
   if (!isOpen || !lead) return null;
 
-  // Filter out the current status so the user only sees the other 4 options
   const availableStatuses = (['pending', 'approved', 'rescheduled', 'completed', 'cancelled'] as LeadStatus[])
     .filter(status => status !== lead.status);
 
-  // Handle status change from the bottom dropdown (View Mode)
   const handleStatusChange = (newStatus: LeadStatus) => {
     setError(null);
     startTransition(async () => {
@@ -68,13 +62,12 @@ export default function LeadModal({
       if (!result.success) {
         setError(result.error || 'Failed to update status');
       } else {
-        if (onStatusChange) onStatusChange(newStatus); // Notify parent to remove card immediately
-        onClose(); // Close modal
+        if (onStatusChange) onStatusChange(newStatus); 
+        onClose(); 
       }
     });
   };
 
-  // Handle saving full lead details (Edit Mode)
   const handleSaveChanges = () => {
     setError(null);
     startTransition(async () => {
@@ -83,11 +76,10 @@ export default function LeadModal({
         setError(result.error || 'Failed to save changes');
       } else {
         if (onLeadUpdate) {
-          // Notify parent with the merged updated data
           onLeadUpdate({ ...lead, ...formData } as Lead); 
         }
         setIsEditing(false);
-        onClose(); // Close modal on success
+        onClose(); 
       }
     });
   };
@@ -96,7 +88,7 @@ export default function LeadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" dir="rtl">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         
-        {/* Header with Dynamic Colors based on lead status */}
+        {/* Header */}
         <div className={`p-6 relative flex items-center justify-between border-b ${
           lead.status === 'approved' ? 'bg-green-50 border-green-100' : 
           lead.status === 'cancelled' ? 'bg-red-50 border-red-100' : 
@@ -237,16 +229,32 @@ export default function LeadModal({
             </div>
           </div>
 
-          {/* Phone */}
-          <div className="flex items-start gap-3 p-3 border-b border-gray-100">
+          {/* Phone & WhatsApp */}
+          <div className="flex items-center gap-3 p-3 border-b border-gray-100">
             <span className="text-gray-400 font-bold">📞</span>
-            <div className="w-full">
-              <p className="text-xs text-gray-500 font-bold mb-0.5">טלפון ליצירת קשר</p>
-              {isEditing ? (
-                <input type="tel" value={formData.phone || ''} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full text-sm bg-gray-50 border border-gray-200 rounded p-1 focus:ring-1 focus:ring-orange-500 outline-none" dir="ltr" />
-              ) : (
-                <a href={`tel:${lead.phone}`} className="text-sm font-medium text-orange-600 hover:underline" dir="ltr">
-                  {lead.phone}
+            <div className="w-full flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 font-bold mb-0.5">טלפון ליצירת קשר</p>
+                {isEditing ? (
+                  <input type="tel" value={formData.phone || ''} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full text-sm bg-gray-50 border border-gray-200 rounded p-1 focus:ring-1 focus:ring-orange-500 outline-none" dir="ltr" />
+                ) : (
+                  <a href={`tel:${lead.phone}`} className="text-sm font-medium text-orange-600 hover:underline" dir="ltr">
+                    {lead.phone}
+                  </a>
+                )}
+              </div>
+              
+              {/* WhatsApp Button - Only visible in View Mode */}
+              {!isEditing && lead.phone && (
+                <a
+                  href={getWhatsAppLink(lead.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors shadow-sm"
+                  title="שלח הודעת WhatsApp"
+                >
+                  <MessageCircle size={16} />
+                  <span className="text-xs font-bold hidden sm:inline">WhatsApp</span>
                 </a>
               )}
             </div>
@@ -268,7 +276,7 @@ export default function LeadModal({
           )}
         </div>
 
-        {/* Dynamic Footer (Edit Mode vs View Mode) */}
+        {/* Dynamic Footer */}
         {isEditing ? (
           <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3 items-center">
             <button 

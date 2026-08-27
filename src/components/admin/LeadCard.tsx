@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Lead, LeadStatus } from '@/types';
-import { Trash2, Edit, CalendarDays, Clock, MapPin, Users, Cake, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Edit, CalendarDays, Clock, MapPin, Users, Cake, Send, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { updateLeadStatus, deleteLead } from '@/actions/leads'; // Adjust path if needed
 import LeadModal from './LeadModal'; 
+import { getWhatsAppLink } from '@/utils/whatsapp';
 
 const STATUS_LABELS: Record<LeadStatus, string> = {
   pending: 'ממתינים',
@@ -20,22 +21,18 @@ interface LeadCardProps {
 }
 
 export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
-  // Local state for Optimistic UI updates
   const [localLead, setLocalLead] = useState<Lead>(event);
   
-  // Keep local state in sync if parent data changes
   useEffect(() => {
     setLocalLead(event);
   }, [event]);
 
-  // UI Control states
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Handle quick status transfer via the dropdown menu
   const handleLeadTransfer = async (to: LeadStatus) => {
     setIsMenuOpen(false); 
-    removeLeadLocally(localLead.id); // Instantly remove from current tab UI
+    removeLeadLocally(localLead.id); 
     
     const result = await updateLeadStatus(localLead.id, to);
     if (!result.success) {
@@ -43,7 +40,6 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
     }
   };
 
-  // Statuses available for transfer (excluding the current one)
   const availableStatuses = (Object.keys(STATUS_LABELS) as LeadStatus[]).filter(
     (status) => status !== localLead.status
   );
@@ -61,9 +57,25 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
               <h2 className="text-xl md:text-2xl font-black text-[#1e293b] leading-tight">
                 {localLead.name}
               </h2>
-              <p className="text-sm md:text-base font-medium text-gray-500 mt-1" dir="ltr text-right">
-                {localLead.phone}
-              </p>
+              
+              {/* Phone and WhatsApp Container */}
+              <div className="flex items-center gap-2 mt-1.5">
+                <h1 className="text-sm md:text-base font-medium text-gray-500 hover:text-gray-900 transition-colors" dir="ltr">
+                  {localLead.phone}
+                </h1>
+                
+                {localLead.phone && (
+                  <a
+                    href={getWhatsAppLink(localLead.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white p-1.5 rounded-full transition-colors"
+                    title="שלח הודעת WhatsApp"
+                  >
+                    <MessageCircle size={16} />
+                  </a>
+                )}
+              </div>
             </div>
             
             {/* Date & Time Badge */}
@@ -122,7 +134,6 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
         <div className="bg-gray-50 p-4 border-t border-gray-200 flex flex-col gap-2 mt-auto rounded-b-2xl">
           
           <div className="relative w-full">
-            {/* Floating Dropdown Menu (Drops UPWARDS to avoid grid overlapping) */}
             {isMenuOpen && (
               <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-xl p-1 z-50 flex flex-col">
                 {availableStatuses.map((status) => (
@@ -150,7 +161,6 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
           </div>
           
           <div className="flex gap-2 w-full">
-            {/* Opens the LeadModal for deep editing */}
             <button 
               onClick={() => setIsModalOpen(true)}
               className="flex-1 bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
@@ -162,8 +172,8 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
               className="bg-white border border-red-200 text-red-600 py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-red-50 hover:border-red-300 transition-colors flex items-center justify-center"
               onClick={() => {
                 if (confirm('האם אתה בטוח שברצונך למחוק את הליד הזה? פעולה זו אינה ניתנת לביטול.')) {
-                  removeLeadLocally(localLead.id); // Remove immediately from UI
-                  deleteLead(localLead.id);        // Delete from server
+                  removeLeadLocally(localLead.id); 
+                  deleteLead(localLead.id);        
                 }
               }}
             >
@@ -174,17 +184,11 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
         </div>
       </div>
 
-      {/* 
-        Mount the Modal Component.
-        We pass callbacks to let the modal control the LeadCard's local state and UI behavior.
-      */}
       <LeadModal 
         lead={localLead} 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
-        // Fired when the user saves edits - updates the card text instantly
         onLeadUpdate={(updatedLead) => setLocalLead(updatedLead)} 
-        // Fired when the user changes status - removes the card from the current tab instantly
         onStatusChange={(newStatus) => {
           setIsModalOpen(false);
           removeLeadLocally(localLead.id); 
