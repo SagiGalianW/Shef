@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { CheckCircle2 } from 'lucide-react';
 import { STEPS } from '../../schema/booking';
 
-// Define the props for the ProgressBar
 interface ProgressBarProps {
   currentStep: number;
 }

@@ -10,50 +10,44 @@ import { bookingSchema, BookingFormInput, BookingFormData } from '../../schema/b
 import Step1 from '../../components/book/Step1';
 import Step2 from '../../components/book/Step2';
 import Step3 from '../../components/book/Step3';
+import Step4 from '../../components/book/Step4'; // Imported the new 4th step
 import ProgressBar from '../../components/book/ProgressBar';
 import { createNewLead } from '../../actions/leads';
 
 export default function BookPage() {
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Initialize the form with react-hook-form
-  // const methods = useForm<BookingFormData>({
-  //   resolver: zodResolver(bookingSchema),
-  //   mode: 'onTouched',
-  //   defaultValues: { 
-  //     date: '',
-  //     time: '',
-  //     adults_count: 1, 
-  //     kids_count: 0,
-  //     location: '',
-  //     desserts_included: false,
-  //     name: '',
-  //     phone: ''
-  //   }
-  // });
+  // Initialize the form with react-hook-form using the updated default values
   const methods = useForm<BookingFormInput, any, BookingFormData>({
     resolver: zodResolver(bookingSchema),
     mode: 'onTouched',
     defaultValues: { 
       date: '',
       time: '',
-      adults_count: 1, 
+      adults_count: 15, // Updated default to match schema minimum
       kids_count: 0,
-      location: '',
+      serving_style: 'center',
       desserts_included: false,
+      city: '',
+      street: '',
+      house_number: '',
+      property_type: 'apartment',
+      floor: '',
       name: '',
-      phone: ''
+      phone: '',
+      notes: ''
     }
   });
   
   // Extract isSubmitting to show a loading state on the button
   const { formState: { isSubmitting }, handleSubmit, trigger, reset } = methods;
   
-  // Navigation Logic
+  // Navigation Logic updated for 4 steps
   const nextStep = async () => {
     let fields: (keyof BookingFormData)[] = [];
     if (currentStep === 0) fields = ['date', 'time', 'adults_count', 'kids_count'];
-    if (currentStep === 1) fields = ['location'];
+    if (currentStep === 1) fields = ['serving_style', 'desserts_included'];
+    if (currentStep === 2) fields = ['city', 'street', 'house_number', 'property_type', 'floor'];
   
     const isValid = await trigger(fields);
     if (isValid) setCurrentStep((prev) => prev + 1);
@@ -93,13 +87,14 @@ export default function BookPage() {
       <ProgressBar currentStep={currentStep} />
   
       <FormProvider {...methods}>
-<form onSubmit={handleSubmit(onSubmit, (errors) => console.log('Zod Errors:', errors))} className="flex-1 flex flex-col min-h-0 w-full relative z-10">          
+        <form onSubmit={handleSubmit(onSubmit, (errors) => console.log('Zod Errors:', errors))} className="flex-1 flex flex-col min-h-0 w-full relative z-10">          
           <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col justify-center items-center px-4 py-2 w-full">
             <div className="w-full max-w-2xl">
               <AnimatePresence mode="wait">
                 {currentStep === 0 && <Step1 key="step1" />}
                 {currentStep === 1 && <Step2 key="step2" />}
                 {currentStep === 2 && <Step3 key="step3" />}
+                {currentStep === 3 && <Step4 key="step4" />}
               </AnimatePresence>
             </div>
           </div>
@@ -118,7 +113,7 @@ export default function BookPage() {
                 </motion.button>
               )}
               
-              {currentStep < 2 ? (
+              {currentStep < 3 ? (
                 <motion.button 
                   whileTap={{ scale: 0.95 }} 
                   type="button" 

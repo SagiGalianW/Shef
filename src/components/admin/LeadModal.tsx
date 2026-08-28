@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react';
 import { 
   X, Calendar, Clock, MapPin, Users, Cake, FileText, 
   CheckCircle, XCircle, Loader2, CheckCheck, RefreshCcw, ArrowLeft,
-  Pencil, Save, MessageCircle // Added MessageCircle for WhatsApp
+  Pencil, Save, MessageCircle, Utensils, Building, Home // Added icons for new fields
 } from 'lucide-react';
 import { Lead, LeadStatus } from '@/types';
 import { updateLeadStatus, updateLeadDetails } from '@/actions/leads'; 
@@ -179,20 +179,45 @@ export default function LeadModal({
             </div>
           </div>
 
-          {/* Location */}
-          <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
-            <MapPin className="text-gray-400 mt-0.5 min-w-[18px]" size={18} />
-            <div className="w-full">
-              <p className="text-xs text-gray-500 font-bold mb-0.5">מיקום האירוע</p>
-              {isEditing ? (
-                <input type="text" value={formData.location || ''} onChange={(e) => setFormData({...formData, location: e.target.value})} className="w-full text-sm bg-white border border-gray-200 rounded p-1 focus:ring-1 focus:ring-orange-500 outline-none" />
-              ) : (
-                <p className="text-sm font-medium text-gray-900">{lead.location}</p>
-              )}
+          {/* Logistics Section (City, Street, House Type) */}
+          <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="flex items-start gap-3">
+              <MapPin className="text-gray-400 mt-0.5 min-w-[18px]" size={18} />
+              <div className="w-full">
+                <p className="text-xs text-gray-500 font-bold mb-1">מיקום האירוע</p>
+                {isEditing ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="text" placeholder="עיר" value={formData.city || ''} onChange={(e) => setFormData({...formData, city: e.target.value})} className="w-full text-sm bg-white border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-orange-500 outline-none" />
+                      <input type="text" placeholder="רחוב" value={formData.street || ''} onChange={(e) => setFormData({...formData, street: e.target.value})} className="w-full text-sm bg-white border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-orange-500 outline-none" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input type="text" placeholder="מס' בית" value={formData.house_number || ''} onChange={(e) => setFormData({...formData, house_number: e.target.value})} className="w-full text-sm bg-white border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-orange-500 outline-none" />
+                      
+                      <select value={formData.property_type || 'apartment'} onChange={(e) => setFormData({...formData, property_type: e.target.value as 'house' | 'apartment'})} className="w-full col-span-1 text-sm bg-white border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-orange-500 outline-none">
+                        <option value="apartment">דירה בבניין</option>
+                        <option value="house">בית פרטי</option>
+                      </select>
+
+                      {formData.property_type === 'apartment' && (
+                        <input type="text" placeholder="קומה" value={formData.floor || ''} onChange={(e) => setFormData({...formData, floor: e.target.value})} className="w-full text-sm bg-white border border-gray-200 rounded p-1.5 focus:ring-1 focus:ring-orange-500 outline-none" />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium text-gray-900">{lead.street} {lead.house_number}, {lead.city}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-600 font-semibold">
+                      {lead.property_type === 'house' ? <Home size={14} /> : <Building size={14} />}
+                      <span>{lead.property_type === 'house' ? 'בית פרטי' : `דירה בבניין (קומה ${lead.floor || 'לא צוינה'})`}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Guests & Desserts */}
+          {/* Guests & Serving Style */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
               <Users className="text-gray-400 mt-0.5 min-w-[18px]" size={18} />
@@ -212,20 +237,38 @@ export default function LeadModal({
             </div>
 
             <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
-              <Cake className="text-gray-400 mt-0.5" size={18} />
-              <div>
-                <p className="text-xs text-gray-500 font-bold mb-0.5">קינוחים</p>
+              <Utensils className="text-gray-400 mt-0.5 min-w-[18px]" size={18} />
+              <div className="w-full">
+                <p className="text-xs text-gray-500 font-bold mb-0.5">סגנון הגשה</p>
                 {isEditing ? (
-                  <label className="flex items-center gap-2 mt-1 cursor-pointer">
-                    <input type="checkbox" checked={formData.desserts_included || false} onChange={(e) => setFormData({...formData, desserts_included: e.target.checked})} className="w-4 h-4 text-orange-600 accent-orange-500 rounded focus:ring-orange-500" />
-                    <span className="text-sm">כלול קינוחים</span>
-                  </label>
+                  <select value={formData.serving_style || 'center'} onChange={(e) => setFormData({...formData, serving_style: e.target.value as 'buffet' | 'center'})} className="w-full mt-1 text-sm bg-white border border-gray-200 rounded p-1 focus:ring-1 focus:ring-orange-500 outline-none">
+                    <option value="center">למרכז השולחן</option>
+                    <option value="buffet">בופה (מזנון)</option>
+                  </select>
                 ) : (
-                  <p className={`text-sm font-bold ${lead.desserts_included ? 'text-green-600' : 'text-gray-500'}`}>
-                    {lead.desserts_included ? 'כלול קינוחים 🍰' : 'ללא קינוחים'}
+                  <p className="text-sm font-medium text-gray-900">
+                    {lead.serving_style === 'buffet' ? 'בופה (מזנון)' : 'למרכז השולחן'}
                   </p>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Desserts Box (Full Width) */}
+          <div className="flex items-start gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <Cake className="text-gray-400 mt-0.5" size={18} />
+            <div>
+              <p className="text-xs text-gray-500 font-bold mb-0.5">קינוחים</p>
+              {isEditing ? (
+                <label className="flex items-center gap-2 mt-1 cursor-pointer">
+                  <input type="checkbox" checked={formData.desserts_included || false} onChange={(e) => setFormData({...formData, desserts_included: e.target.checked})} className="w-4 h-4 text-orange-600 accent-orange-500 rounded focus:ring-orange-500" />
+                  <span className="text-sm">כלול קינוחים</span>
+                </label>
+              ) : (
+                <p className={`text-sm font-bold ${lead.desserts_included ? 'text-green-600' : 'text-gray-500'}`}>
+                  {lead.desserts_included ? 'כלול קינוחים 🍰' : 'ללא קינוחים'}
+                </p>
+              )}
             </div>
           </div>
 

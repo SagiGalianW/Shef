@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Lead, LeadStatus } from '@/types';
-import { Trash2, Edit, CalendarDays, Clock, MapPin, Users, Cake, Send, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+// Added Utensils icon for the serving style
+import { Trash2, Edit, CalendarDays, Clock, MapPin, Users, Cake, Send, ChevronDown, ChevronUp, MessageCircle, Utensils } from 'lucide-react';
 import { updateLeadStatus, deleteLead } from '@/actions/leads'; // Adjust path if needed
 import LeadModal from './LeadModal'; 
 import { getWhatsAppLink } from '@/utils/whatsapp';
@@ -97,11 +98,20 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
 
           {/* Card Body: Details with Icons */}
           <div className="text-sm md:text-base text-gray-700 bg-gray-50 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-3 border border-gray-100">
-            <div className="flex items-start gap-2">
+            
+            {/* Logistics - Combined location string spanning full width */}
+            <div className="flex items-start gap-2 md:col-span-2">
               <MapPin className="text-gray-400 shrink-0 mt-0.5" size={16} />
-              <p><span className="font-bold text-gray-900">מיקום:</span> {localLead.location}</p>
+              <p>
+                <span className="font-bold text-gray-900">מיקום:</span>{' '}
+                {localLead.street} {localLead.house_number}, {localLead.city}{' '}
+                {localLead.property_type === 'apartment' && localLead.floor && (
+                  <span className="text-gray-500">(קומה {localLead.floor})</span>
+                )}
+              </p>
             </div>
             
+            {/* Guests Count */}
             <div className="flex items-start gap-2">
               <Users className="text-gray-400 shrink-0 mt-0.5" size={16} />
               <p>
@@ -110,6 +120,16 @@ export default function LeadCard({ event, removeLeadLocally }: LeadCardProps) {
               </p>
             </div>
 
+            {/* Serving Style */}
+            <div className="flex items-start gap-2">
+              <Utensils className="text-gray-400 shrink-0 mt-0.5" size={16} />
+              <p>
+                <span className="font-bold text-gray-900">הגשה:</span>{' '}
+                {localLead.serving_style === 'buffet' ? 'בופה (מזנון)' : 'למרכז שולחן'}
+              </p>
+            </div>
+
+            {/* Desserts */}
             <div className="flex items-start gap-2 md:col-span-2">
               <Cake className={`shrink-0 mt-0.5 ${localLead.desserts_included ? 'text-orange-500' : 'text-gray-300'}`} size={16} />
               <p>

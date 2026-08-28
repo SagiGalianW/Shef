@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+// NOTE: We will need to update this Zod schema next to include the new fields!
 import { BookingFormData } from '../schema/booking';
 import { createClient } from '../utils/supabase/server'; 
 import { Lead, LeadStatus } from '../types';
@@ -15,6 +16,7 @@ export async function getLeadsByStatus(status: LeadStatus): Promise<Lead[]> {
   // Initialize the secure client for this specific request
   const supabase = await createClient();
 
+  // select('*') automatically fetches our newly added logistics and serving style columns
   const { data, error } = await supabase
     .from('leads')
     .select('*')
@@ -34,12 +36,13 @@ export async function getLeadsByStatus(status: LeadStatus): Promise<Lead[]> {
   PUT
 */
 
-// Server Action to update the full details of an existing lead
+// Server Action to update the full details of an existing lead (including the new fields)
 export async function updateLeadDetails(leadId: string, updatedData: Partial<Lead>) {
   try {
     const supabase = await createClient();
 
-    // Remove fields we don't want to accidentally update (like id, created_at)
+    // Remove fields we don't want to accidentally update (like id, created_at, status)
+    // The rest of the fields (including city, street, property_type, etc.) are dynamically extracted
     const { id, created_at, status, ...safeDataToUpdate } = updatedData as any;
 
     const { error } = await supabase
@@ -66,6 +69,7 @@ export async function createNewLead(data: BookingFormData) {
     // Initialize the secure client
     const supabase = await createClient();
     
+    // The data object will now contain our new fields once BookingFormData is updated
     const { error } = await supabase
       .from('leads')
       .insert([

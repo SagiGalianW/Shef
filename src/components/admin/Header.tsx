@@ -52,14 +52,14 @@ export default function Header() {
           </Link>
 
           {/* Settings Button */}
-          <button 
+          {/* <button 
             className="p-2 md:px-4 md:py-2 text-gray-600 hover:text-[#1e293b] bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-transparent hover:border-gray-200 flex items-center gap-2"
             title="הגדרות מערכת"
           >
             <Settings size={20} />
             <span className="hidden sm:inline font-bold text-sm">הגדרות</span>
           </button>
-          
+           */}
         </div>
       </div>
     </header>
